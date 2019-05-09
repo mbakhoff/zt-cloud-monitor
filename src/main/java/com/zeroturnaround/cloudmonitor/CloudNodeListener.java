@@ -2,6 +2,7 @@ package com.zeroturnaround.cloudmonitor;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,7 +28,7 @@ public class CloudNodeListener extends ComputerListener {
       logStatus(c.getName(), "online");
     }
     catch (Exception e) {
-      log.log(Level.SEVERE, "failed to log " + c, e);
+      log.log(Level.SEVERE, "logging node status" + c.getName(), e);
     }
   }
 
@@ -37,7 +38,7 @@ public class CloudNodeListener extends ComputerListener {
       logStatus(c.getName(), "offline");
     }
     catch (IOException e) {
-      log.log(Level.SEVERE, "failed to log " + c, e);
+      log.log(Level.SEVERE, "logging node status" + c.getName(), e);
     }
   }
 
@@ -49,7 +50,7 @@ public class CloudNodeListener extends ComputerListener {
     String timestamp = String.valueOf(System.currentTimeMillis());
     byte[] logLine = (String.join(",", Arrays.asList(name, status, timestamp)) + "\n").getBytes(UTF_8);
     synchronized (this) {
-      Files.write(logFile, logLine, APPEND);
+      Files.write(logFile, logLine, CREATE, APPEND);
     }
   }
 }

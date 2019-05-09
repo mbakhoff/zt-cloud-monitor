@@ -2,6 +2,7 @@ package com.zeroturnaround.cloudmonitor;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -18,7 +19,7 @@ import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
 
 @Extension
-public class BuildTimelineListener extends RunListener {
+public class BuildTimelineListener extends RunListener<Run<?, ?>> {
 
   private static final Logger log = Logger.getLogger(BuildTimelineListener.class.getName());
 
@@ -28,7 +29,7 @@ public class BuildTimelineListener extends RunListener {
       logBuildInfo(run);
     }
     catch (Exception e) {
-      log.log(Level.SEVERE, "failed to log " + run, e);
+      log.log(Level.SEVERE, "logging run completion " + run, e);
     }
   }
 
@@ -46,7 +47,7 @@ public class BuildTimelineListener extends RunListener {
 
     byte[] logLine = (String.join(",", Arrays.asList(node, start, end, job, build, result)) + "\n").getBytes(UTF_8);
     synchronized (this) {
-      Files.write(logFile, logLine, APPEND);
+      Files.write(logFile, logLine, CREATE, APPEND);
     }
   }
 
@@ -57,6 +58,14 @@ public class BuildTimelineListener extends RunListener {
 
   private String getNode() {
     Computer computer = Computer.currentComputer();
-    return computer != null ? computer.getName() : "unknown";
+    if (computer == null)
+      throw new IllegalStateException("computer is null");
+    String name = computer.getName();
+    if (name == null)
+      return computer.getClass().getSimpleName();
+    name = name.trim();
+    if (name.isEmpty())
+      return computer.getClass().getSimpleName();
+    return name;
   }
 }
