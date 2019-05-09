@@ -7,7 +7,8 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,14 +42,25 @@ public class BuildTimelineListener extends RunListener<Run<?, ?>> {
     String node = getNode();
     String start = String.valueOf(run.getStartTimeInMillis());
     String end = String.valueOf(System.currentTimeMillis());
-    String job = run.getParent().getName();
+    String job = run.getParent().getFullName();
     String build = String.valueOf(run.getNumber());
     String result = getResult(run);
 
-    byte[] logLine = (String.join(",", Arrays.asList(node, start, end, job, build, result)) + "\n").getBytes(UTF_8);
+    byte[] logLine = (encodeBuild(node, start, end, job, build, result) + "\n").getBytes(UTF_8);
     synchronized (this) {
       Files.write(logFile, logLine, CREATE, APPEND);
     }
+  }
+
+  private String encodeBuild(String node, String start, String end, String job, String build, String result) {
+    Map<String, String> values = new HashMap<>();
+    values.put("node", node);
+    values.put("start", start);
+    values.put("end", end);
+    values.put("job", job);
+    values.put("build", build);
+    values.put("result", result);
+    return Helper.urlEncode(values);
   }
 
   private String getResult(Run run) {
@@ -60,10 +72,7 @@ public class BuildTimelineListener extends RunListener<Run<?, ?>> {
     Computer computer = Computer.currentComputer();
     if (computer == null)
       throw new IllegalStateException("computer is null");
-    String name = computer.getName();
-    if (name == null)
-      return computer.getClass().getSimpleName();
-    name = name.trim();
+    String name = computer.getName().trim();
     if (name.isEmpty())
       return computer.getClass().getSimpleName();
     return name;
