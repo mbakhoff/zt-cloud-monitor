@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 
 import hudson.Extension;
 import hudson.model.Computer;
+import hudson.model.Executor;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
@@ -39,33 +40,29 @@ public class BuildTimelineListener extends RunListener<Run<?, ?>> {
     if (logFile == null)
       return;
 
-    String node = getNode();
-    String start = String.valueOf(run.getStartTimeInMillis());
-    String end = String.valueOf(System.currentTimeMillis());
-    String job = run.getParent().getFullName();
-    String build = String.valueOf(run.getNumber());
-    String result = getResult(run);
+    Map<String, String> values = new HashMap<>();
+    values.put("node", getNode());
+    values.put("start", String.valueOf(run.getStartTimeInMillis()));
+    values.put("end", String.valueOf(System.currentTimeMillis()));
+    values.put("job", run.getParent().getFullName());
+    values.put("build", String.valueOf(run.getNumber()));
+    values.put("executor", getExecutor());
+    values.put("result", getResult(run));
 
-    byte[] logLine = (encodeBuild(node, start, end, job, build, result) + "\n").getBytes(UTF_8);
+    byte[] logLine = (Helper.urlEncode(values) + "\n").getBytes(UTF_8);
     synchronized (this) {
       Files.write(logFile, logLine, CREATE, APPEND);
     }
   }
 
-  private String encodeBuild(String node, String start, String end, String job, String build, String result) {
-    Map<String, String> values = new HashMap<>();
-    values.put("node", node);
-    values.put("start", start);
-    values.put("end", end);
-    values.put("job", job);
-    values.put("build", build);
-    values.put("result", result);
-    return Helper.urlEncode(values);
+  private String getExecutor() {
+    Executor executor = Executor.currentExecutor();
+    return executor != null ? String.valueOf(executor.getNumber()) : null;
   }
 
   private String getResult(Run run) {
     Result result = run.getResult();
-    return result != null ? result.toString() : "unknown";
+    return result != null ? result.toString() : null;
   }
 
   private String getNode() {

@@ -10,6 +10,8 @@ public class Helper {
     try {
       StringBuilder sb = new StringBuilder();
       for (Map.Entry<String, String> e : values.entrySet()) {
+        if (e.getValue() == null)
+          continue;
         if (sb.length() > 0)
           sb.append('&');
         sb.append(URLEncoder.encode(e.getKey(), "UTF-8"));

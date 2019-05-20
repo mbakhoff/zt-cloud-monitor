@@ -42,8 +42,11 @@ public class CloudNodeListener extends ComputerListener {
       if (logFile == null)
         return;
 
-      String timestamp = String.valueOf(System.currentTimeMillis());
-      byte[] logLine = (encodeStatus(name, timestamp, status) + "\n").getBytes(UTF_8);
+      Map<String, String> values = new HashMap<>();
+      values.put("name", name);
+      values.put("timestamp", String.valueOf(System.currentTimeMillis()));
+      values.put("status", status);
+      byte[] logLine = (Helper.urlEncode(values) + "\n").getBytes(UTF_8);
       synchronized (this) {
         Files.write(logFile, logLine, CREATE, APPEND);
       }
@@ -53,11 +56,4 @@ public class CloudNodeListener extends ComputerListener {
     }
   }
 
-  private String encodeStatus(String name, String timestamp, String status) {
-    Map<String, String> values = new HashMap<>();
-    values.put("name", name);
-    values.put("timestamp", timestamp);
-    values.put("status", status);
-    return Helper.urlEncode(values);
-  }
 }
